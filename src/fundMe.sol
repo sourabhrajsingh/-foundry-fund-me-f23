@@ -15,7 +15,8 @@ contract FundMe {
 
     // State variables
     uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
-    address public i_owner;
+    address private i_owner;
+
     address[] private s_funders;
     mapping(address => uint256) private s_addressToAmountFunded;
     AggregatorV3Interface private s_priceFeed;
@@ -80,6 +81,10 @@ contract FundMe {
 
     function getFunder(uint256 index) public view returns (address) {
         return s_funders[index];
+    }
+
+    function getOwner() public view returns (address) {
+        return i_owner;
     }
 
     // Explainer from: https://solidity-by-example.org/fallback/
