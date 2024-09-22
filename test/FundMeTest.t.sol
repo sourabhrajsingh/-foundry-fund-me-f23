@@ -12,6 +12,7 @@ contract FundMeTest is Test {
     address alice = makeAddr("alice");
     uint256 constant SEND_VALUE = 0.1 ether;
     uint256 constant STARTING_BALANCE = 10 ether;
+    uint256 constant GAS_PRICE = 1;
 
     modifier funded() {
         vm.prank(alice);
@@ -66,9 +67,16 @@ contract FundMeTest is Test {
         uint256 startingFundMeBalance = address(fundMe).balance;
         uint256 startingOwnerBalance = fundMe.getOwner().balance;
 
+        vm.txGasPrice(GAS_PRICE);
+        uint256 gasStart = gasleft();
+
         vm.startPrank(fundMe.getOwner());
         fundMe.withdraw();
         vm.stopPrank();
+
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = (gasStart - gasEnd) * tx.gasprice;
+        console.log("Withdraw consummed: %d gas", gasUsed);
 
         uint256 endingFundMeBalance = address(fundMe).balance;
         uint256 endingOwnerBalance = fundMe.getOwner().balance;
@@ -108,5 +116,14 @@ contract FundMeTest is Test {
             (numberOfFunders + startingFunderIndex) * SEND_VALUE,
             (fundMe.getOwner().balance - startingOwnerBalance)
         );
+    }
+
+    function testPrintStorageData() public view {
+        for (uint256 i = 0; i < 4; i++) {
+            bytes32 value = vm.load(address(fundMe), bytes32(i));
+            console.log("Value at location", i, ":");
+            console.logBytes32(value);
+        }
+        console.log("PriceFeed Address :", address(fundMe.getPriceFeed()));
     }
 }
