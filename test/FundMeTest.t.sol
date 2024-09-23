@@ -118,6 +118,37 @@ contract FundMeTest is Test {
         );
     }
 
+    function testWithdrawFromMultipleFundersCheaper() public funded {
+        uint160 numberOfFunders = 10;
+        uint160 startingFunderIndex = 1;
+
+        for (
+            uint160 i = startingFunderIndex;
+            i < numberOfFunders + startingFunderIndex;
+            i++
+        ) {
+            hoax(address(i), SEND_VALUE);
+            fundMe.fund{value: SEND_VALUE}();
+        }
+
+        uint256 startingFundMeBalance = address(fundMe).balance;
+        uint256 startingOwnerBalance = fundMe.getOwner().balance;
+
+        vm.startPrank(fundMe.getOwner());
+        fundMe.cheaperWithdraw();
+        vm.stopPrank();
+
+        assertEq(address(fundMe).balance, 0);
+        assertEq(
+            fundMe.getOwner().balance,
+            startingOwnerBalance + startingFundMeBalance
+        );
+        assertEq(
+            (numberOfFunders + startingFunderIndex) * SEND_VALUE,
+            (fundMe.getOwner().balance - startingOwnerBalance)
+        );
+    }
+
     function testPrintStorageData() public view {
         for (uint256 i = 0; i < 4; i++) {
             bytes32 value = vm.load(address(fundMe), bytes32(i));
