@@ -3,8 +3,9 @@
 pragma solidity ^0.8.18;
 
 import {Test, console} from "forge-std/Test.sol";
-import {FundMe} from "../src/fundMe.sol";
-import {DeployFundMe} from "../script/DeployFundMe.s.sol";
+import {FundMe} from "../../src/fundMe.sol";
+import {DeployFundMe} from "../../script/DeployFundMe.s.sol";
+import {FundFundMe, WithdrawFundMe} from "../../script/Interactions.s.sol";
 
 contract FundMeTest is Test {
     FundMe fundMe;
@@ -156,5 +157,24 @@ contract FundMeTest is Test {
             console.logBytes32(value);
         }
         console.log("PriceFeed Address :", address(fundMe.getPriceFeed()));
+    }
+
+    function testUserCanFundAndOwnerWithdraw() public {
+        uint256 preUserBalance = address(alice).balance;
+        uint256 preOwnerBalance = address(fundMe.getOwner()).balance;
+
+        // Using vm.prank to simulate funding from the USER address
+        vm.prank(alice);
+        fundMe.fund{value: SEND_VALUE}();
+
+        WithdrawFundMe withdrawFundMe = new WithdrawFundMe();
+        withdrawFundMe.withdrawFundMe(address(fundMe));
+
+        uint256 afterUserBalance = address(alice).balance;
+        uint256 afterOwnerBalance = address(fundMe.getOwner()).balance;
+
+        assert(address(fundMe).balance == 0);
+        assertEq(afterUserBalance + SEND_VALUE, preUserBalance);
+        assertEq(preOwnerBalance + SEND_VALUE, afterOwnerBalance);
     }
 }
